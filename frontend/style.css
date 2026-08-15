@@ -1,0 +1,656 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background: #f7f8fa;
+    color: #17181c;
+
+    min-height: 100vh;
+}
+
+
+button,
+textarea {
+    font: inherit;
+}
+
+
+button {
+    cursor: pointer;
+}
+
+
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+    width: 290px;
+
+    background: #111318;
+    color: #ffffff;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 28px 20px;
+}
+
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-bottom: 42px;
+}
+
+
+.brand-icon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #ffffff;
+    color: #111318;
+
+    border-radius: 12px;
+
+    font-size: 20px;
+    font-weight: 800;
+}
+
+
+.brand h1 {
+    font-size: 19px;
+    letter-spacing: -0.4px;
+}
+
+
+.brand p {
+    margin-top: 2px;
+
+    color: #8d929d;
+
+    font-size: 12px;
+}
+
+
+.section-title {
+    color: #8d929d;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    margin-bottom: 12px;
+}
+
+
+.upload-button {
+    width: 100%;
+
+    padding: 12px 14px;
+
+    border: 1px solid #30343d;
+    border-radius: 10px;
+
+    background: #1b1e25;
+    color: #ffffff;
+
+    font-weight: 600;
+
+    transition: 0.2s ease;
+}
+
+
+.upload-button:hover {
+    background: #252933;
+}
+
+
+.upload-status {
+    margin-top: 10px;
+
+    font-size: 12px;
+    color: #9da2ad;
+
+    line-height: 1.5;
+}
+
+
+.documents-container {
+    margin-top: 26px;
+
+    flex: 1;
+
+    overflow-y: auto;
+}
+
+
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+
+.document-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px;
+
+    background: #191c22;
+
+    border: 1px solid #252933;
+
+    border-radius: 10px;
+}
+
+
+.document-icon {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #242832;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+}
+
+
+.document-info {
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+.document-name {
+    font-size: 12px;
+    font-weight: 600;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.document-size {
+    margin-top: 3px;
+
+    color: #777d88;
+
+    font-size: 10px;
+}
+
+
+.delete-button {
+    width: 28px;
+    height: 28px;
+
+    border: none;
+
+    background: transparent;
+    color: #777d88;
+
+    border-radius: 7px;
+}
+
+
+.delete-button:hover {
+    background: #2a2023;
+    color: #ffffff;
+}
+
+
+.empty-documents {
+    color: #686e79;
+
+    font-size: 12px;
+
+    padding: 8px 2px;
+}
+
+
+.sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid #252933;
+
+    color: #8d929d;
+
+    font-size: 11px;
+}
+
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #56c596;
+}
+
+
+.connection-status {
+    margin-left: auto;
+}
+
+
+/* =========================
+   MAIN
+========================= */
+
+.main {
+    flex: 1;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding: 44px 60px 60px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+.topbar {
+    border-bottom: 1px solid #e3e5e9;
+
+    padding-bottom: 24px;
+}
+
+
+.topbar h2 {
+    font-size: 28px;
+
+    letter-spacing: -0.8px;
+}
+
+
+.topbar p {
+    margin-top: 7px;
+
+    color: #737984;
+
+    font-size: 14px;
+}
+
+
+/* =========================
+   WELCOME
+========================= */
+
+.welcome {
+    text-align: center;
+
+    max-width: 600px;
+
+    margin: auto;
+
+    padding: 70px 20px 40px;
+}
+
+
+.welcome-icon {
+    width: 56px;
+    height: 56px;
+
+    margin: 0 auto 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 16px;
+
+    background: #111318;
+    color: #ffffff;
+
+    font-size: 25px;
+}
+
+
+.welcome h2 {
+    font-size: 30px;
+
+    letter-spacing: -1px;
+}
+
+
+.welcome p {
+    margin-top: 12px;
+
+    color: #737984;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================
+   ANSWER
+========================= */
+
+.answer-section {
+    max-width: 850px;
+
+    width: 100%;
+
+    margin: 40px auto 25px;
+
+    background: #ffffff;
+
+    border: 1px solid #e1e3e7;
+
+    border-radius: 16px;
+
+    padding: 24px;
+
+    box-shadow:
+        0 8px 30px rgba(20, 24, 32, 0.05);
+}
+
+
+.answer-header {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding-bottom: 18px;
+
+    border-bottom: 1px solid #eceef1;
+}
+
+
+.answer-icon {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #111318;
+    color: #ffffff;
+}
+
+
+.answer-header h3 {
+    font-size: 15px;
+}
+
+
+.answer-header span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #8a909a;
+
+    font-size: 11px;
+}
+
+
+.answer-content {
+    padding-top: 20px;
+
+    font-size: 15px;
+
+    line-height: 1.8;
+
+    color: #292c33;
+
+    white-space: pre-wrap;
+}
+
+
+/* =========================
+   SOURCES
+========================= */
+
+.sources-section {
+    margin-top: 25px;
+
+    padding-top: 20px;
+
+    border-top: 1px solid #eceef1;
+}
+
+
+.sources-section h4 {
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.8px;
+
+    color: #777d88;
+
+    margin-bottom: 10px;
+}
+
+
+.sources-list {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+}
+
+
+.source-card {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 8px 10px;
+
+    background: #f6f7f8;
+
+    border: 1px solid #e5e7ea;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+
+    color: #555b65;
+}
+
+
+/* =========================
+   QUESTION
+========================= */
+
+.question-area {
+    max-width: 850px;
+
+    width: 100%;
+
+    margin: auto auto 0;
+}
+
+
+.question-box {
+    background: #ffffff;
+
+    border: 1px solid #dfe2e7;
+
+    border-radius: 16px;
+
+    padding: 16px;
+
+    box-shadow:
+        0 8px 30px rgba(20, 24, 32, 0.06);
+}
+
+
+.question-box textarea {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    resize: none;
+
+    color: #20232a;
+
+    background: transparent;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+}
+
+
+.question-box textarea::placeholder {
+    color: #a0a5ae;
+}
+
+
+.question-footer {
+    display: flex;
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-top: 10px;
+}
+
+
+.hint {
+    color: #9a9fa8;
+
+    font-size: 10px;
+}
+
+
+.ask-button {
+    border: none;
+
+    padding: 10px 16px;
+
+    border-radius: 9px;
+
+    background: #111318;
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    transition: 0.2s ease;
+}
+
+
+.ask-button:hover {
+    background: #292c33;
+}
+
+
+.ask-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 850px) {
+
+    .sidebar {
+        width: 230px;
+    }
+
+    .main {
+        padding: 30px;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .app {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+
+        min-height: auto;
+    }
+
+    .documents-container {
+        max-height: 200px;
+    }
+
+    .main {
+        padding: 25px 18px 35px;
+    }
+
+    .welcome {
+        padding-top: 45px;
+    }
+
+    .welcome h2 {
+        font-size: 24px;
+    }
+
+    .question-footer {
+        align-items: flex-end;
+        gap: 12px;
+    }
+
+    .hint {
+        max-width: 180px;
+    }
+
+}

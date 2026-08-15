@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RAGCore — Knowledge Assistant</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">R</div>
+
+                <div>
+                    <h1>RAGCore</h1>
+                    <p>Knowledge Assistant</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+
+                <div class="section-title">
+                    Documents
+                </div>
+
+                <button
+                    class="upload-button"
+                    id="uploadButton"
+                >
+                    + Upload PDF
+                </button>
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".pdf"
+                    hidden
+                >
+
+                <div
+                    class="upload-status"
+                    id="uploadStatus"
+                ></div>
+
+            </div>
+
+            <div class="documents-container">
+
+                <div
+                    class="documents-list"
+                    id="documentsList"
+                >
+                    <div class="empty-documents">
+                        No documents loaded.
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="sidebar-footer">
+
+                <div class="status-dot"></div>
+
+                <span>RAGCore API</span>
+
+                <span
+                    class="connection-status"
+                    id="connectionStatus"
+                >
+                    Checking...
+                </span>
+
+            </div>
+
+        </aside>
+
+
+        <!-- Main content -->
+        <main class="main">
+
+            <header class="topbar">
+
+                <div>
+                    <h2>Knowledge Hub</h2>
+
+                    <p>
+                        Ask questions and get answers grounded in your documents.
+                    </p>
+                </div>
+
+            </header>
+
+
+            <!-- Welcome -->
+            <section
+                class="welcome"
+                id="welcomeSection"
+            >
+
+                <div class="welcome-icon">
+                    ✦
+                </div>
+
+                <h2>
+                    Ask your documents anything.
+                </h2>
+
+                <p>
+                    Upload your enterprise documents and let RAGCore
+                    retrieve the information you need.
+                </p>
+
+            </section>
+
+
+            <!-- Answer -->
+            <section
+                class="answer-section"
+                id="answerSection"
+                hidden
+            >
+
+                <div class="answer-header">
+
+                    <div class="answer-icon">
+                        ✦
+                    </div>
+
+                    <div>
+                        <h3>AI Answer</h3>
+
+                        <span id="answerStatus">
+                            Grounded response
+                        </span>
+                    </div>
+
+                </div>
+
+                <div
+                    class="answer-content"
+                    id="answerContent"
+                ></div>
+
+
+                <div
+                    class="sources-section"
+                    id="sourcesSection"
+                    hidden
+                >
+
+                    <h4>
+                        Sources
+                    </h4>
+
+                    <div
+                        class="sources-list"
+                        id="sourcesList"
+                    ></div>
+
+                </div>
+
+            </section>
+
+
+            <!-- Question area -->
+            <section class="question-area">
+
+                <div class="question-box">
+
+                    <textarea
+                        id="questionInput"
+                        placeholder="Ask a question about your documents..."
+                        rows="3"
+                    ></textarea>
+
+                    <div class="question-footer">
+
+                        <span class="hint">
+                            Answers are generated from your uploaded documents.
+                        </span>
+
+                        <button
+                            class="ask-button"
+                            id="askButton"
+                        >
+                            Ask
+                            <span>→</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script src="app.js"></script>
+
+</body>
+</html>

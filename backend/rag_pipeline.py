@@ -11,11 +11,38 @@ class RAGPipeline:
         results = self.retriever.search(question)
 
         documents = results["documents"][0]
+        metadatas = results["metadatas"][0]
 
-        context = "\n\n".join(documents)
+        # No sufficiently relevant documents found
+        if not documents:
+            return {
+                "answer": (
+                    "I couldn't find sufficient information "
+                    "in the uploaded documents."
+                ),
+                "sources": []
+            }
+
+        context_parts = []
+
+        for i, document in enumerate(documents):
+            source = metadatas[i]["source"]
+            page = metadatas[i]["page"]
+
+            context_parts.append(
+                f"[Source: {source}, Page: {page}]\n{document}"
+            )
+
+        context = "\n\n".join(context_parts)
 
         prompt = f"""
-Answer the question using only the information provided in the context.
+You are RAGCore, an enterprise document question-answering system.
+
+Answer the user's question using ONLY the information provided
+in the context.
+
+Do not use outside knowledge.
+Do not invent information.
 
 Context:
 {context}
@@ -28,18 +55,42 @@ Answer:
 
         response = self.llm.generate(prompt)
 
-        return response
+        sources = []
+
+        for metadata in metadatas:
+            source_info = {
+                "source": metadata["source"],
+                "page": metadata["page"]
+            }
+
+            if source_info not in sources:
+                sources.append(source_info)
+
+        return {
+            "answer": response,
+            "sources": sources
+        }
 
 
 if __name__ == "__main__":
     rag = RAGPipeline()
 
-    question = "What is RAGCore?"
+    question = "Who is the Prime Minister of India?"
 
-    answer = rag.answer(question)
+    result = rag.answer(question)
 
     print("\nQuestion:")
     print(question)
 
     print("\nAnswer:")
-    print(answer)
+    print(result["answer"])
+
+    print("\nSources:")
+
+    if result["sources"]:
+        for source in result["sources"]:
+            print(
+                f"- {source['source']} — Page {source['page']}"
+            )
+    else:
+        print("No relevant sources found.")

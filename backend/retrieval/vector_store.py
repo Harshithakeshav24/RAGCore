@@ -11,9 +11,12 @@ class VectorStore:
             name=collection_name
         )
 
-    def add_documents(self, chunks, embeddings):
+    def add_documents(self, chunks, embeddings, document_id=None):
+        if document_id is None:
+            document_id = "default"
+
         ids = [
-            f"{chunk['source']}_{chunk['page']}_{i}"
+            f"{document_id}_{chunk['page']}_{i}"
             for i, chunk in enumerate(chunks)
         ]
 
@@ -22,7 +25,8 @@ class VectorStore:
         metadatas = [
             {
                 "source": chunk["source"],
-                "page": chunk["page"]
+                "page": chunk["page"],
+                "document_id": document_id
             }
             for chunk in chunks
         ]
@@ -39,7 +43,12 @@ class VectorStore:
     def search(self, query_embedding, n_results=3):
         results = self.collection.query(
             query_embeddings=query_embedding.tolist(),
-            n_results=n_results
+            n_results=n_results,
+            include=[
+                "documents",
+                "metadatas",
+                "distances"
+            ]
         )
 
         return results
