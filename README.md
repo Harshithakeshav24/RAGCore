@@ -20,7 +20,7 @@ The objective of RAGCore is to develop an intelligent knowledge retrieval system
 
 ## Project Status
 
-🚧 Under Development
+Under Development
 
 ## Project Type
 
