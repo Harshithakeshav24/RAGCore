@@ -43,4 +43,4 @@ temp/
 
 # Large local data
 data/raw/
-data/processed/
+data/processed/data/chroma/
