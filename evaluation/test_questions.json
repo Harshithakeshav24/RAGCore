@@ -1,0 +1,47 @@
+[
+  {
+    "question": "What is RAGCore?",
+    "expected_source": "ragcore_test.pdf",
+    "expected_answer_contains": [
+      "enterprise",
+      "knowledge retrieval",
+      "generation"
+    ]
+  },
+  {
+    "question": "What technologies does RAGCore use?",
+    "expected_source": "ragcore_test.pdf",
+    "expected_answer_contains": [
+      "document processing",
+      "text extraction",
+      "embeddings",
+      "vector search",
+      "retrieval",
+      "large language models"
+    ]
+  },
+  {
+    "question": "What is the goal of RAGCore?",
+    "expected_source": "ragcore_test.pdf",
+    "expected_answer_contains": [
+      "accurate answers",
+      "uploaded documents"
+    ]
+  },
+  {
+    "question": "Who is the Prime Minister of India?",
+    "expected_source": null,
+    "expected_answer_contains": [
+      "couldn't find",
+      "sufficient information"
+    ]
+  },
+  {
+    "question": "How many days of annual leave are employees entitled to?",
+    "expected_source": null,
+    "expected_answer_contains": [
+      "couldn't find",
+      "sufficient information"
+    ]
+  }
+]
