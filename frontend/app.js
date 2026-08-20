@@ -257,6 +257,12 @@ function renderDocuments(
                     doc.size_bytes
                 );
 
+            const filename =
+                escapeHTML(
+                    doc.filename ||
+                    "Unnamed document"
+                );
+
             card.innerHTML = `
 
                 <div class="document-icon">
@@ -267,13 +273,9 @@ function renderDocuments(
 
                     <div
                         class="document-name"
-                        title="${escapeHTML(
-                            doc.filename
-                        )}"
+                        title="${filename}"
                     >
-                        ${escapeHTML(
-                            doc.filename
-                        )}
+                        ${filename}
                     </div>
 
                     <div class="document-size">
@@ -564,7 +566,7 @@ async function deleteDocument(
 
 
 // ============================================================
-// QUESTION
+// QUESTION EVENTS
 // ============================================================
 
 askButton.addEventListener(
@@ -623,6 +625,15 @@ async function askQuestion() {
         return;
     }
 
+    if (question.length > 2000) {
+
+        showAnswerError(
+            "Question must be 2000 characters or less."
+        );
+
+        return;
+    }
+
     askButton.disabled =
         true;
 
@@ -638,6 +649,9 @@ async function askQuestion() {
 
     sourcesSection.hidden =
         true;
+
+    sourcesList.innerHTML =
+        "";
 
     answerContent.textContent =
         "";
@@ -690,7 +704,7 @@ async function askQuestion() {
             "Grounded response";
 
         renderSources(
-            data.sources
+            data.sources || []
         );
 
     } catch (error) {
@@ -785,20 +799,36 @@ function renderSources(
             sourceCard.className =
                 "source-card";
 
+            const filename =
+                escapeHTML(
+                    source.source ||
+                    "Unknown document"
+                );
+
+            const page =
+                Number(source.page) || 1;
+
             sourceCard.innerHTML = `
-                📄
-                <span>
-                    ${escapeHTML(
-                        source.source
-                    )}
-                    — Page ${source.page}
-                </span>
+                <div class="source-icon">
+                    📄
+                </div>
+
+                <div class="source-details">
+
+                    <div class="source-name">
+                        ${filename}
+                    </div>
+
+                    <div class="source-page">
+                        Page ${page}
+                    </div>
+
+                </div>
             `;
 
             sourcesList.appendChild(
                 sourceCard
             );
-
         }
     );
 
