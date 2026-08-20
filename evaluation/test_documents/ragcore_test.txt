@@ -1,0 +1,14 @@
+RAGCore - Intelligent Enterprise Knowledge Retrieval and Generation System
+
+RAGCore is an intelligent enterprise knowledge retrieval and generation system. It allows users to search for information from enterprise documents and receive relevant, source-grounded answers.
+
+Technologies used by RAGCore include:
+
+- Document processing
+- Text extraction
+- Embeddings
+- Vector search
+- Retrieval
+- Large language models
+
+The goal of RAGCore is to provide accurate answers based on the information available in uploaded documents.

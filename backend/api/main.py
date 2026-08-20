@@ -1,27 +1,45 @@
+from pathlib import Path
+from uuid import uuid4
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from pathlib import Path
-import shutil
-import uuid
+from pypdf.errors import PdfReadError
 
 from backend.ingestion.document_loader import load_pdf
 from backend.ingestion.chunker import chunk_documents
-from backend.retrieval.embeddings import EmbeddingModel
 from backend.retrieval.vector_store import VectorStore
 from backend.rag_pipeline import RAGPipeline
 
 
+# ============================================================
+# PATHS
+# ============================================================
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+DOCUMENTS_DIR = BASE_DIR / "data" / "documents"
+
+DOCUMENTS_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
+# ============================================================
+# FASTAPI
+# ============================================================
+
 app = FastAPI(
     title="RAGCore API",
-    description="Enterprise Knowledge Retrieval and Generation API",
+    description="Enterprise Knowledge Retrieval and Generation System",
     version="1.0.0"
 )
 
 
-# =========================
+# ============================================================
 # CORS
-# =========================
+# ============================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,389 +49,498 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 
-# =========================
-# CONFIGURATION
-# =========================
+# ============================================================
+# SERVICES
+# ============================================================
 
-DOCUMENTS_DIR = Path("data/documents")
-DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-# =========================
-# COMPONENTS
-# =========================
-
-embedding_model = EmbeddingModel()
 vector_store = VectorStore()
+
 rag_pipeline = RAGPipeline()
 
 
-# =========================
-# REQUEST MODELS
-# =========================
+# ============================================================
+# REQUEST MODEL
+# ============================================================
 
 class QueryRequest(BaseModel):
     question: str
 
 
-# =========================
+# ============================================================
 # ROOT
-# =========================
+# ============================================================
 
 @app.get("/")
-def root():
+async def root():
 
     return {
-        "message": "RAGCore API is running"
+        "name": "RAGCore",
+        "description": "Enterprise Knowledge Retrieval and Generation System",
+        "status": "online"
     }
 
 
-# =========================
+# ============================================================
 # HEALTH
-# =========================
+# ============================================================
 
 @app.get("/health")
-def health():
+async def health():
 
     return {
         "status": "healthy"
     }
 
 
-# =========================
-# LIST DOCUMENTS
-# =========================
-
-@app.get("/documents")
-def list_documents():
-
-    documents = []
-
-    stored_documents = vector_store.collection.get(
-        include=["metadatas"]
-    )
-
-    metadata_list = stored_documents.get(
-        "metadatas",
-        []
-    )
-
-    document_ids = {}
-
-    for metadata in metadata_list:
-
-        if metadata:
-
-            document_id = metadata.get(
-                "document_id"
-            )
-
-            source = metadata.get(
-                "source"
-            )
-
-            if document_id and source:
-
-                document_ids[document_id] = source
-
-
-    for file_path in DOCUMENTS_DIR.glob("*.pdf"):
-
-        matching_id = None
-
-        for document_id, source in document_ids.items():
-
-            if source == file_path.name:
-
-                matching_id = document_id
-
-                break
-
-
-        documents.append({
-            "document_id": matching_id,
-            "filename": file_path.name,
-            "size_bytes": file_path.stat().st_size
-        })
-
-
-    return {
-        "count": len(documents),
-        "documents": documents
-    }
-
-
-# =========================
-# UPLOAD DOCUMENT
-# =========================
+# ============================================================
+# UPLOAD PDF
+# ============================================================
 
 @app.post("/upload")
 async def upload_document(
     file: UploadFile = File(...)
 ):
 
-    if not file.filename.lower().endswith(".pdf"):
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="No filename provided."
+        )
 
-        await file.close()
+    filename = Path(file.filename).name
 
+    if not filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400,
             detail="Only PDF files are supported."
         )
 
-
-    document_id = str(
-        uuid.uuid4()
-    )
-
+    document_id = str(uuid4())
 
     file_path = (
-        DOCUMENTS_DIR /
-        file.filename
+        DOCUMENTS_DIR
+        / f"{document_id}_{filename}"
     )
-
 
     try:
 
-        with file_path.open("wb") as buffer:
+        # ----------------------------------------------------
+        # READ UPLOADED FILE
+        # ----------------------------------------------------
 
-            shutil.copyfileobj(
-                file.file,
-                buffer
+        file_bytes = await file.read()
+
+        if not file_bytes:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file is empty."
             )
 
+        # ----------------------------------------------------
+        # SAVE PDF
+        # ----------------------------------------------------
 
-        await file.close()
+        file_path.write_bytes(file_bytes)
 
+        # ----------------------------------------------------
+        # LOAD PDF
+        # ----------------------------------------------------
 
         documents = load_pdf(
             str(file_path)
         )
 
-
         if not documents:
-
-            raise ValueError(
-                "The PDF contains no readable pages."
+            raise HTTPException(
+                status_code=400,
+                detail="No readable text was found in the PDF."
             )
 
+        # ----------------------------------------------------
+        # ADD METADATA
+        # ----------------------------------------------------
+
+        for document in documents:
+
+            if not hasattr(document, "metadata"):
+                continue
+
+            document.metadata["document_id"] = document_id
+
+            document.metadata["source"] = filename
+
+            if "page" in document.metadata:
+
+                try:
+
+                    document.metadata["page"] = (
+                        int(document.metadata["page"]) + 1
+                    )
+
+                except Exception:
+                    pass
+
+        # ----------------------------------------------------
+        # CHUNK DOCUMENT
+        # ----------------------------------------------------
 
         chunks = chunk_documents(
             documents
         )
 
-
         if not chunks:
-
-            raise ValueError(
-                "No readable text was found in the PDF."
+            raise HTTPException(
+                status_code=400,
+                detail="The PDF could not be split into searchable chunks."
             )
 
+        # ----------------------------------------------------
+        # EXTRACT TEXT FROM CHUNKS
+        # ----------------------------------------------------
 
-        texts = [
-            chunk["text"]
-            for chunk in chunks
-        ]
+        texts = []
 
+        for chunk in chunks:
 
-        embeddings = embedding_model.encode(
-            texts
+            if hasattr(chunk, "page_content"):
+
+                text = chunk.page_content
+
+            elif isinstance(chunk, dict):
+
+                text = chunk.get(
+                    "text",
+                    ""
+                )
+
+            else:
+
+                text = str(chunk)
+
+            texts.append(text)
+
+        # ----------------------------------------------------
+        # CREATE EMBEDDINGS
+        #
+        # IMPORTANT:
+        # EmbeddingModel belongs to Retriever.
+        #
+        # RAGPipeline
+        #     |
+        #     ---> Retriever
+        #              |
+        #              ---> EmbeddingModel
+        #
+        # Do NOT use:
+        # rag_pipeline.embedding_model
+        #
+        # Correct:
+        # rag_pipeline.retriever.embedding_model
+        # ----------------------------------------------------
+
+        embedding_model = (
+            rag_pipeline
+            .retriever
+            .embedding_model
         )
 
+        # IMPORTANT:
+        # Your EmbeddingModel.encode() does NOT accept
+        # normalize_embeddings.
+        #
+        # Therefore we only pass texts.
+
+        embeddings = (
+            embedding_model
+            .encode(texts)
+            .tolist()
+        )
+
+        # ----------------------------------------------------
+        # STORE DOCUMENTS + EMBEDDINGS
+        # ----------------------------------------------------
 
         vector_store.add_documents(
             chunks,
-            embeddings,
-            document_id=document_id
+            embeddings
         )
 
+        print(
+            f"Successfully processed: {filename}"
+        )
+
+        print(
+            f"Pages: {len(documents)}"
+        )
+
+        print(
+            f"Chunks: {len(chunks)}"
+        )
+
+        # ----------------------------------------------------
+        # SUCCESS RESPONSE
+        # ----------------------------------------------------
 
         return {
-
-            "message":
-                "Document uploaded and processed successfully.",
-
-            "filename":
-                file.filename,
-
-            "document_id":
-                document_id,
-
-            "pages":
-                len(documents),
-
-            "chunks":
-                len(chunks)
+            "message": "Document uploaded and processed successfully.",
+            "filename": filename,
+            "document_id": document_id,
+            "pages": len(documents),
+            "chunks": len(chunks)
         }
 
-
-    except Exception as e:
-
-        await file.close()
-
+    except HTTPException:
 
         if file_path.exists():
 
             try:
-
                 file_path.unlink()
-
-            except PermissionError:
-
+            except Exception:
                 pass
 
+        raise
+
+    except PdfReadError:
+
+        if file_path.exists():
+
+            try:
+                file_path.unlink()
+            except Exception:
+                pass
 
         raise HTTPException(
+            status_code=400,
+            detail="The uploaded file is not a valid or readable PDF."
+        )
 
+    except Exception as error:
+
+        print(
+            f"Upload error: {error}"
+        )
+
+        if file_path.exists():
+
+            try:
+                file_path.unlink()
+            except Exception:
+                pass
+
+        raise HTTPException(
             status_code=500,
+            detail="Failed to process the uploaded PDF."
+        )
 
-            detail=
-                f"Document processing failed: {str(e)}"
+    finally:
+
+        try:
+            await file.close()
+        except Exception:
+            pass
+
+
+# ============================================================
+# QUERY
+# ============================================================
+
+@app.post("/query")
+async def query_documents(
+    request: QueryRequest
+):
+
+    question = request.question.strip()
+
+    if not question:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty."
+        )
+
+    try:
+
+        result = rag_pipeline.answer(
+            question
+        )
+
+        return {
+            "answer": result.get(
+                "answer",
+                ""
+            ),
+            "sources": result.get(
+                "sources",
+                []
+            )
+        }
+
+    except Exception as error:
+
+        print(
+            f"Query error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate an answer."
         )
 
 
-# =========================
-# DELETE DOCUMENT
-# =========================
+# ============================================================
+# LIST DOCUMENTS
+# ============================================================
 
-@app.delete(
-    "/documents/{document_id}"
-)
-def delete_document(
+@app.get("/documents")
+async def list_documents():
+
+    try:
+
+        documents = []
+
+        for file_path in DOCUMENTS_DIR.iterdir():
+
+            if not file_path.is_file():
+                continue
+
+            if not file_path.name.lower().endswith(".pdf"):
+                continue
+
+            full_name = file_path.name
+
+            parts = full_name.split(
+                "_",
+                1
+            )
+
+            if len(parts) == 2:
+
+                document_id = parts[0]
+
+                display_filename = parts[1]
+
+            else:
+
+                document_id = full_name
+
+                display_filename = full_name
+
+            documents.append(
+                {
+                    "document_id": document_id,
+                    "filename": display_filename,
+                    "size_bytes": file_path.stat().st_size
+                }
+            )
+
+        documents.sort(
+            key=lambda item: item["filename"].lower()
+        )
+
+        return {
+            "count": len(documents),
+            "documents": documents
+        }
+
+    except Exception as error:
+
+        print(
+            f"Document listing error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load documents."
+        )
+
+
+# ============================================================
+# DELETE DOCUMENT
+# ============================================================
+
+@app.delete("/documents/{document_id}")
+async def delete_document(
     document_id: str
 ):
 
     try:
 
-        result = vector_store.collection.get(
-
-            where={
-                "document_id":
-                    document_id
-            },
-
-            include=[
-                "metadatas"
-            ]
+        matching_files = list(
+            DOCUMENTS_DIR.glob(
+                f"{document_id}_*.pdf"
+            )
         )
 
-
-        ids = result.get(
-            "ids",
-            []
-        )
-
-
-        metadatas = result.get(
-            "metadatas",
-            []
-        )
-
-
-        if not ids:
+        if not matching_files:
 
             raise HTTPException(
-
                 status_code=404,
-
-                detail=
-                    "Document not found."
+                detail="Document not found."
             )
 
+        # Delete vectors belonging to the document.
 
-        source = None
+        try:
 
-
-        if metadatas:
-
-            source = metadatas[0].get(
-                "source"
+            vector_store.delete_document(
+                document_id
             )
 
+        except Exception as error:
 
-        vector_store.collection.delete(
-            ids=ids
-        )
-
-
-        if source:
-
-            file_path = (
-                DOCUMENTS_DIR /
-                source
+            print(
+                f"Vector delete warning: {error}"
             )
 
+        # Delete physical PDF files.
 
-            if file_path.exists():
+        deleted_files = []
 
-                try:
+        for file_path in matching_files:
 
-                    file_path.unlink()
+            file_path.unlink()
 
-                except PermissionError:
-
-                    pass
-
+            deleted_files.append(
+                file_path.name
+            )
 
         return {
-
-            "message":
-                "Document deleted successfully.",
-
-            "document_id":
-                document_id,
-
-            "filename":
-                source,
-
-            "deleted_chunks":
-                len(ids)
+            "message": "Document deleted successfully.",
+            "document_id": document_id,
+            "files": deleted_files
         }
-
 
     except HTTPException:
 
         raise
 
+    except Exception as error:
 
-    except Exception as e:
+        print(
+            f"Delete error: {error}"
+        )
 
         raise HTTPException(
-
             status_code=500,
-
-            detail=
-                f"Document deletion failed: {str(e)}"
+            detail="Failed to delete document."
         )
 
 
-# =========================
-# QUERY
-# =========================
+# ============================================================
+# RUN DIRECTLY
+# ============================================================
 
-@app.post("/query")
-def query_document(
-    request: QueryRequest
-):
+if __name__ == "__main__":
 
-    if not request.question.strip():
+    import uvicorn
 
-        raise HTTPException(
-
-            status_code=400,
-
-            detail=
-                "Question cannot be empty."
-        )
-
-
-    result = rag_pipeline.answer(
-        request.question
+    uvicorn.run(
+        "backend.api.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=False
     )
-
-
-    return result

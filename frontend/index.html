@@ -1,29 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="RAGCore - Enterprise Knowledge Retrieval and Generation System"
+    >
 
     <title>RAGCore — Knowledge Assistant</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
+
 <body>
 
     <div class="app">
 
-        <!-- Sidebar -->
+
+        <!-- =========================
+             SIDEBAR
+        ========================== -->
+
         <aside class="sidebar">
 
-            <div class="brand">
-                <div class="brand-icon">R</div>
 
-                <div>
-                    <h1>RAGCore</h1>
-                    <p>Knowledge Assistant</p>
+            <!-- Brand -->
+
+            <div class="brand">
+
+                <div class="brand-icon">
+                    R
                 </div>
+
+                <div class="brand-text">
+
+                    <h1>
+                        RAGCore
+                    </h1>
+
+                    <p>
+                        Knowledge Assistant
+                    </p>
+
+                </div>
+
             </div>
+
+
+            <!-- Documents -->
 
             <div class="sidebar-section">
 
@@ -31,19 +63,38 @@
                     Documents
                 </div>
 
-                <button
-                    class="upload-button"
-                    id="uploadButton"
+
+                <!-- Upload Dropzone -->
+
+                <div
+                    class="upload-dropzone"
+                    id="uploadDropzone"
                 >
-                    + Upload PDF
-                </button>
+
+                    <div class="dropzone-icon">
+                        ↑
+                    </div>
+
+                    <div class="dropzone-title">
+                        Upload PDF
+                    </div>
+
+                    <div class="dropzone-text">
+                        Click or drag a PDF here
+                    </div>
+
+                </div>
+
 
                 <input
                     type="file"
                     id="fileInput"
-                    accept=".pdf"
+                    accept=".pdf,application/pdf"
                     hidden
                 >
+
+
+                <!-- Upload Status -->
 
                 <div
                     class="upload-status"
@@ -52,24 +103,34 @@
 
             </div>
 
+
+            <!-- Document List -->
+
             <div class="documents-container">
 
                 <div
                     class="documents-list"
                     id="documentsList"
                 >
+
                     <div class="empty-documents">
                         No documents loaded.
                     </div>
+
                 </div>
 
             </div>
+
+
+            <!-- Sidebar Footer -->
 
             <div class="sidebar-footer">
 
                 <div class="status-dot"></div>
 
-                <span>RAGCore API</span>
+                <span>
+                    RAGCore API
+                </span>
 
                 <span
                     class="connection-status"
@@ -83,23 +144,41 @@
         </aside>
 
 
-        <!-- Main content -->
+
+        <!-- =========================
+             MAIN CONTENT
+        ========================== -->
+
         <main class="main">
+
+
+            <!-- Topbar -->
 
             <header class="topbar">
 
                 <div>
-                    <h2>Knowledge Hub</h2>
+
+                    <div class="eyebrow">
+                        ENTERPRISE KNOWLEDGE
+                    </div>
+
+                    <h2>
+                        Knowledge Hub
+                    </h2>
 
                     <p>
-                        Ask questions and get answers grounded in your documents.
+                        Ask questions and get answers grounded
+                        in your uploaded documents.
                     </p>
+
                 </div>
 
             </header>
 
 
+
             <!-- Welcome -->
+
             <section
                 class="welcome"
                 id="welcomeSection"
@@ -114,19 +193,42 @@
                 </h2>
 
                 <p>
-                    Upload your enterprise documents and let RAGCore
-                    retrieve the information you need.
+                    Upload your enterprise documents and let
+                    RAGCore retrieve the information you need.
                 </p>
+
+
+                <div class="feature-row">
+
+                    <div class="feature-pill">
+                        <span>✦</span>
+                        Source-grounded
+                    </div>
+
+                    <div class="feature-pill">
+                        <span>◈</span>
+                        Semantic search
+                    </div>
+
+                    <div class="feature-pill">
+                        <span>◇</span>
+                        Multi-document
+                    </div>
+
+                </div>
 
             </section>
 
 
+
             <!-- Answer -->
+
             <section
                 class="answer-section"
                 id="answerSection"
                 hidden
             >
+
 
                 <div class="answer-header">
 
@@ -135,14 +237,38 @@
                     </div>
 
                     <div>
-                        <h3>AI Answer</h3>
+
+                        <h3>
+                            AI Answer
+                        </h3>
 
                         <span id="answerStatus">
                             Grounded response
                         </span>
+
                     </div>
 
                 </div>
+
+
+                <!-- Loading -->
+
+                <div
+                    class="answer-loading"
+                    id="answerLoading"
+                    hidden
+                >
+
+                    <div class="loading-spinner"></div>
+
+                    <span>
+                        Searching your documents...
+                    </span>
+
+                </div>
+
+
+                <!-- Answer -->
 
                 <div
                     class="answer-content"
@@ -150,15 +276,26 @@
                 ></div>
 
 
+                <!-- Sources -->
+
                 <div
                     class="sources-section"
                     id="sourcesSection"
                     hidden
                 >
 
-                    <h4>
-                        Sources
-                    </h4>
+                    <div class="sources-heading">
+
+                        <h4>
+                            Sources
+                        </h4>
+
+                        <span>
+                            Retrieved documents
+                        </span>
+
+                    </div>
+
 
                     <div
                         class="sources-list"
@@ -170,36 +307,69 @@
             </section>
 
 
-            <!-- Question area -->
+
+            <!-- Question -->
+
             <section class="question-area">
 
+
                 <div class="question-box">
+
 
                     <textarea
                         id="questionInput"
                         placeholder="Ask a question about your documents..."
                         rows="3"
+                        maxlength="2000"
                     ></textarea>
+
 
                     <div class="question-footer">
 
-                        <span class="hint">
-                            Answers are generated from your uploaded documents.
-                        </span>
+
+                        <div class="question-meta">
+
+                            <span class="hint">
+                                Answers are generated from
+                                your uploaded documents.
+                            </span>
+
+                            <span
+                                class="character-count"
+                                id="characterCount"
+                            >
+                                0 / 2000
+                            </span>
+
+                        </div>
+
 
                         <button
                             class="ask-button"
                             id="askButton"
                         >
-                            Ask
-                            <span>→</span>
+
+                            <span>
+                                Ask
+                            </span>
+
+                            <span class="ask-arrow">
+                                →
+                            </span>
+
                         </button>
 
                     </div>
 
                 </div>
 
+
+                <div class="keyboard-hint">
+                    Press Enter to ask · Shift + Enter for a new line
+                </div>
+
             </section>
+
 
         </main>
 
@@ -209,4 +379,5 @@
     <script src="app.js"></script>
 
 </body>
+
 </html>
