@@ -62,16 +62,13 @@ document.addEventListener(
     "DOMContentLoaded",
     () => {
 
-        console.log(
-            "DOM loaded"
-        );
+        console.log("DOM loaded");
 
         checkAPIConnection();
 
         loadDocuments();
 
         updateCharacterCount();
-
     }
 );
 
@@ -93,39 +90,31 @@ async function checkAPIConnection() {
                 `${API_BASE_URL}/health`
             );
 
-
         console.log(
             "Health response:",
             response.status
         );
-
 
         if (!response.ok) {
 
             throw new Error(
                 `Health request failed: ${response.status}`
             );
-
         }
-
 
         const data =
             await response.json();
-
 
         console.log(
             "Health data:",
             data
         );
 
-
         connectionStatus.textContent =
             "Connected";
 
-
         connectionStatus.style.color =
             "#56c596";
-
 
     } catch (error) {
 
@@ -134,16 +123,12 @@ async function checkAPIConnection() {
             error
         );
 
-
         connectionStatus.textContent =
             "Offline";
 
-
         connectionStatus.style.color =
             "#e06c75";
-
     }
-
 }
 
 
@@ -157,68 +142,55 @@ async function loadDocuments() {
         "Loading documents..."
     );
 
-
     const url =
         `${API_BASE_URL}/documents`;
-
 
     console.log(
         "Documents URL:",
         url
     );
 
-
     try {
 
         const response =
             await fetch(url);
-
 
         console.log(
             "Documents response status:",
             response.status
         );
 
-
         console.log(
             "Documents response OK:",
             response.ok
         );
-
 
         if (!response.ok) {
 
             const errorText =
                 await response.text();
 
-
             console.error(
                 "Documents API error:",
                 errorText
             );
 
-
             throw new Error(
                 `Documents request failed: ${response.status}`
             );
-
         }
-
 
         const data =
             await response.json();
-
 
         console.log(
             "Documents data:",
             data
         );
 
-
         renderDocuments(
-            data.documents
+            data.documents || []
         );
-
 
     } catch (error) {
 
@@ -227,15 +199,12 @@ async function loadDocuments() {
             error
         );
 
-
         documentsList.innerHTML = `
             <div class="empty-documents">
                 Unable to load documents.
             </div>
         `;
-
     }
-
 }
 
 
@@ -252,7 +221,6 @@ function renderDocuments(
         documents
     );
 
-
     if (
         !documents ||
         documents.length === 0
@@ -265,32 +233,29 @@ function renderDocuments(
         `;
 
         return;
-
     }
 
-
-    documentsList.innerHTML =
-        "";
-
+    documentsList.innerHTML = "";
 
     documents.forEach(
-        document => {
+        doc => {
+
+            // IMPORTANT:
+            // Use "doc", NOT "document".
+            // "document" is the browser's global DOM object.
 
             const card =
                 document.createElement(
                     "div"
                 );
 
-
             card.className =
                 "document-card";
 
-
             const size =
                 formatFileSize(
-                    document.size_bytes
+                    doc.size_bytes
                 );
-
 
             card.innerHTML = `
 
@@ -303,11 +268,11 @@ function renderDocuments(
                     <div
                         class="document-name"
                         title="${escapeHTML(
-                            document.filename
+                            doc.filename
                         )}"
                     >
                         ${escapeHTML(
-                            document.filename
+                            doc.filename
                         )}
                     </div>
 
@@ -320,39 +285,35 @@ function renderDocuments(
                 <button
                     class="delete-button"
                     title="Delete document"
+                    type="button"
                 >
                     🗑
                 </button>
 
             `;
 
-
             const deleteButton =
                 card.querySelector(
                     ".delete-button"
                 );
-
 
             deleteButton.addEventListener(
                 "click",
                 () => {
 
                     deleteDocument(
-                        document.document_id,
-                        document.filename
+                        doc.document_id,
+                        doc.filename
                     );
 
                 }
             );
 
-
             documentsList.appendChild(
                 card
             );
-
         }
     );
-
 }
 
 
@@ -377,21 +338,16 @@ fileInput.addEventListener(
         const file =
             fileInput.files[0];
 
-
         if (!file) {
 
             return;
-
         }
-
 
         await uploadFile(
             file
         );
 
-
-        fileInput.value =
-            "";
+        fileInput.value = "";
 
     }
 );
@@ -435,17 +391,13 @@ uploadDropzone.addEventListener(
             "drag-over"
         );
 
-
         const file =
             event.dataTransfer.files[0];
-
 
         if (!file) {
 
             return;
-
         }
-
 
         await uploadFile(
             file
@@ -454,6 +406,10 @@ uploadDropzone.addEventListener(
     }
 );
 
+
+// ============================================================
+// UPLOAD FUNCTION
+// ============================================================
 
 async function uploadFile(
     file
@@ -471,31 +427,25 @@ async function uploadFile(
         );
 
         return;
-
     }
-
 
     uploadDropzone.classList.add(
         "uploading"
     );
 
-
     showUploadStatus(
         "Uploading and processing..."
     );
-
 
     try {
 
         const formData =
             new FormData();
 
-
         formData.append(
             "file",
             file
         );
-
 
         const response =
             await fetch(
@@ -506,10 +456,8 @@ async function uploadFile(
                 }
             );
 
-
         const data =
             await response.json();
-
 
         if (!response.ok) {
 
@@ -517,17 +465,13 @@ async function uploadFile(
                 data.detail ||
                 "Upload failed."
             );
-
         }
-
 
         showUploadStatus(
             `${file.name} uploaded successfully.`
         );
 
-
         await loadDocuments();
-
 
     } catch (error) {
 
@@ -535,7 +479,6 @@ async function uploadFile(
             "UPLOAD FAILED:",
             error
         );
-
 
         showUploadStatus(
             error.message,
@@ -547,9 +490,7 @@ async function uploadFile(
         uploadDropzone.classList.remove(
             "uploading"
         );
-
     }
-
 }
 
 
@@ -564,31 +505,34 @@ async function deleteDocument(
 
     const confirmed =
         confirm(
-            `Delete "${filename}"?\n\nThis will also remove its searchable data from RAGCore.`
+            `Delete "${filename}"?\n\n` +
+            `This will also remove its searchable ` +
+            `data from RAGCore.`
         );
-
 
     if (!confirmed) {
 
         return;
-
     }
-
 
     try {
 
+        showUploadStatus(
+            `Deleting ${filename}...`
+        );
+
         const response =
             await fetch(
-                `${API_BASE_URL}/documents/${documentId}`,
+                `${API_BASE_URL}/documents/${encodeURIComponent(
+                    documentId
+                )}`,
                 {
                     method: "DELETE"
                 }
             );
 
-
         const data =
             await response.json();
-
 
         if (!response.ok) {
 
@@ -596,17 +540,13 @@ async function deleteDocument(
                 data.detail ||
                 "Failed to delete document."
             );
-
         }
 
-
         await loadDocuments();
-
 
         showUploadStatus(
             `${filename} deleted successfully.`
         );
-
 
     } catch (error) {
 
@@ -615,14 +555,11 @@ async function deleteDocument(
             error
         );
 
-
         showUploadStatus(
             error.message,
             true
         );
-
     }
-
 }
 
 
@@ -650,7 +587,6 @@ questionInput.addEventListener(
             askQuestion();
 
         }
-
     }
 );
 
@@ -666,10 +602,8 @@ function updateCharacterCount() {
     const length =
         questionInput.value.length;
 
-
     characterCount.textContent =
         `${length} / 2000`;
-
 }
 
 
@@ -682,53 +616,41 @@ async function askQuestion() {
     const question =
         questionInput.value.trim();
 
-
     if (!question) {
 
         questionInput.focus();
 
         return;
-
     }
-
 
     askButton.disabled =
         true;
-
 
     askButton.innerHTML = `
         <span>Thinking...</span>
     `;
 
-
     answerSection.hidden =
         false;
-
 
     welcomeSection.hidden =
         true;
 
-
     sourcesSection.hidden =
         true;
 
-
     answerContent.textContent =
         "";
-
 
     answerContent.classList.remove(
         "error"
     );
 
-
     answerLoading.hidden =
         false;
 
-
     answerStatus.textContent =
         "Retrieving relevant information";
-
 
     try {
 
@@ -749,10 +671,8 @@ async function askQuestion() {
                 }
             );
 
-
         const data =
             await response.json();
-
 
         if (!response.ok) {
 
@@ -760,23 +680,18 @@ async function askQuestion() {
                 data.detail ||
                 "Question failed."
             );
-
         }
-
 
         answerContent.textContent =
             data.answer ||
             "No answer was returned.";
 
-
         answerStatus.textContent =
             "Grounded response";
-
 
         renderSources(
             data.sources
         );
-
 
     } catch (error) {
 
@@ -784,7 +699,6 @@ async function askQuestion() {
             "QUERY FAILED:",
             error
         );
-
 
         showAnswerError(
             error.message
@@ -795,18 +709,14 @@ async function askQuestion() {
         answerLoading.hidden =
             true;
 
-
         askButton.disabled =
             false;
-
 
         askButton.innerHTML = `
             <span>Ask</span>
             <span class="ask-arrow">→</span>
         `;
-
     }
-
 }
 
 
@@ -821,31 +731,24 @@ function showAnswerError(
     answerSection.hidden =
         false;
 
-
     welcomeSection.hidden =
         true;
-
 
     answerLoading.hidden =
         true;
 
-
     sourcesSection.hidden =
         true;
-
 
     answerContent.classList.add(
         "error"
     );
 
-
     answerContent.textContent =
         `Unable to generate an answer: ${message}`;
 
-
     answerStatus.textContent =
         "Request failed";
-
 }
 
 
@@ -866,13 +769,10 @@ function renderSources(
             true;
 
         return;
-
     }
-
 
     sourcesList.innerHTML =
         "";
-
 
     sources.forEach(
         source => {
@@ -882,10 +782,8 @@ function renderSources(
                     "div"
                 );
 
-
             sourceCard.className =
                 "source-card";
-
 
             sourceCard.innerHTML = `
                 📄
@@ -897,7 +795,6 @@ function renderSources(
                 </span>
             `;
 
-
             sourcesList.appendChild(
                 sourceCard
             );
@@ -905,10 +802,8 @@ function renderSources(
         }
     );
 
-
     sourcesSection.hidden =
         false;
-
 }
 
 
@@ -924,12 +819,10 @@ function showUploadStatus(
     uploadStatus.textContent =
         message;
 
-
     uploadStatus.style.color =
         isError
             ? "#e06c75"
             : "#56c596";
-
 
     setTimeout(
         () => {
@@ -940,7 +833,6 @@ function showUploadStatus(
         },
         5000
     );
-
 }
 
 
@@ -955,27 +847,20 @@ function formatFileSize(
     if (!bytes) {
 
         return "0 KB";
-
     }
-
 
     const kilobytes =
         bytes / 1024;
 
-
     if (kilobytes < 1024) {
 
         return `${kilobytes.toFixed(1)} KB`;
-
     }
-
 
     const megabytes =
         kilobytes / 1024;
 
-
     return `${megabytes.toFixed(1)} MB`;
-
 }
 
 
@@ -1013,5 +898,4 @@ function escapeHTML(
             /'/g,
             "&#039;"
         );
-
 }

@@ -4,15 +4,21 @@ import chromadb
 
 
 class VectorStore:
-    def __init__(self, collection_name: str = "ragcore"):
+
+    def __init__(
+        self,
+        collection_name: str = "ragcore"
+    ):
         self.collection_name = collection_name
 
         self.client = chromadb.PersistentClient(
             path="data/chroma"
         )
 
-        self.collection = self.client.get_or_create_collection(
-            name=collection_name
+        self.collection = (
+            self.client.get_or_create_collection(
+                name=collection_name
+            )
         )
 
     def add_documents(
@@ -20,9 +26,6 @@ class VectorStore:
         documents,
         embeddings: List[List[float]],
     ) -> None:
-        """
-        Add document chunks and their embeddings to ChromaDB.
-        """
 
         if not documents:
             return
@@ -39,7 +42,6 @@ class VectorStore:
 
         for index, document in enumerate(documents):
 
-            # LangChain Document
             if hasattr(document, "page_content"):
 
                 text = document.page_content
@@ -48,7 +50,6 @@ class VectorStore:
                     document.metadata or {}
                 )
 
-            # Dictionary document
             elif isinstance(document, dict):
 
                 text = document.get(
@@ -63,12 +64,16 @@ class VectorStore:
                     )
                 )
 
-            # Fallback
             else:
 
                 text = str(document)
 
                 metadata = {}
+
+            text = str(text).strip()
+
+            if not text:
+                continue
 
             source = metadata.get(
                 "source",
@@ -80,29 +85,60 @@ class VectorStore:
                 1
             )
 
-            # Make sure metadata is safe for ChromaDB
+            document_id = metadata.get(
+                "document_id",
+                "unknown"
+            )
+
+            try:
+                page = int(page)
+            except Exception:
+                page = 1
+
             metadata["source"] = str(source)
-            metadata["page"] = int(page)
+            metadata["page"] = page
+            metadata["document_id"] = str(
+                document_id
+            )
+
+            safe_document_id = str(
+                document_id
+            ).replace("-", "")
+
+            chunk_hash = abs(
+                hash(text)
+            )
 
             chunk_id = (
                 f"{self.collection_name}_"
+                f"{safe_document_id}_"
                 f"{index}_"
-                f"{abs(hash(text))}"
+                f"{chunk_hash}"
             )
 
             ids.append(chunk_id)
             texts.append(text)
             metadatas.append(metadata)
 
+        if not texts:
+            return
+
+        # Important:
+        # embeddings must correspond exactly
+        # to the documents being stored.
+        valid_embeddings = embeddings[
+            :len(texts)
+        ]
+
         self.collection.add(
             ids=ids,
             documents=texts,
-            embeddings=embeddings,
+            embeddings=valid_embeddings,
             metadatas=metadatas,
         )
 
         print(
-            f"Added {len(documents)} chunks "
+            f"Added {len(texts)} chunks "
             f"to vector store."
         )
 
@@ -112,27 +148,28 @@ class VectorStore:
         n_results: int = 3,
         top_k: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """
-        Search ChromaDB using a query embedding.
-
-        Supports both n_results and top_k.
-        """
 
         if top_k is not None:
             n_results = top_k
 
-        collection_count = self.collection.count()
+        collection_count = (
+            self.collection.count()
+        )
 
         if collection_count == 0:
+
             return {
                 "documents": [[]],
                 "metadatas": [[]],
                 "distances": [[]],
             }
 
-        n_results = min(
-            n_results,
-            collection_count
+        n_results = max(
+            1,
+            min(
+                n_results,
+                collection_count
+            )
         )
 
         results = self.collection.query(
@@ -147,12 +184,10 @@ class VectorStore:
                 "documents",
                 [[]]
             ),
-
             "metadatas": results.get(
                 "metadatas",
                 [[]]
             ),
-
             "distances": results.get(
                 "distances",
                 [[]]
@@ -160,37 +195,17 @@ class VectorStore:
         }
 
     def count(self) -> int:
-        """
-        Return the number of stored chunks.
-        """
 
         return self.collection.count()
-
-    def delete_collection(self) -> None:
-        """
-        Delete the current collection and recreate it.
-        """
-
-        try:
-            self.client.delete_collection(
-                name=self.collection_name
-            )
-        except Exception:
-            pass
-
-        self.collection = (
-            self.client.get_or_create_collection(
-                name=self.collection_name
-            )
-        )
 
     def delete_document(
         self,
         document_id: str
-    ) -> None:
-        """
-        Delete all chunks belonging to a document.
-        """
+    ) -> int:
+
+        document_id = str(
+            document_id
+        )
 
         try:
 
@@ -205,16 +220,57 @@ class VectorStore:
                 []
             )
 
-            if ids:
-                self.collection.delete(
-                    ids=ids
+            if not ids:
+
+                print(
+                    f"No vector chunks found for "
+                    f"document: {document_id}"
                 )
+
+                return 0
+
+            self.collection.delete(
+                ids=ids
+            )
+
+            print(
+                f"Deleted {len(ids)} chunks for "
+                f"document: {document_id}"
+            )
+
+            return len(ids)
 
         except Exception as error:
 
             print(
-                f"Vector store delete warning: {error}"
+                f"Vector store delete warning: "
+                f"{error}"
             )
+
+            return 0
+
+    def delete_collection(self) -> None:
+
+        try:
+
+            self.client.delete_collection(
+                name=self.collection_name
+            )
+
+        except Exception:
+            pass
+
+        self.collection = (
+            self.client.get_or_create_collection(
+                name=self.collection_name
+            )
+        )
+
+        print(
+            f"Vector collection "
+            f"'{self.collection_name}' "
+            f"reset successfully."
+        )
 
 
 if __name__ == "__main__":
@@ -226,9 +282,11 @@ if __name__ == "__main__":
     )
 
     print(
-        f"Collection: {store.collection.name}"
+        f"Collection: "
+        f"{store.collection.name}"
     )
 
     print(
-        f"Stored chunks: {store.count()}"
+        f"Stored chunks: "
+        f"{store.count()}"
     )
